@@ -20,6 +20,17 @@
   <!-- Add quote form (created dynamically via JS) -->
   <div id="formContainer"></div>
 
+   <!-- JSON Export -->
+  <button onclick="exportQuotes()">Export Quotes (JSON)</button>
+
+  <!-- JSON Import -->
+  <input
+    type="file"
+    id="importFile"
+    accept=".json"
+    onchange="importFromJsonFile(event)"
+  />
+
   <script src="script.js"></script>
 </body>
 </html>
