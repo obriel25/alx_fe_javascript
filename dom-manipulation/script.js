@@ -1,6 +1,8 @@
 // Quote data
 // const quoteDisplay = document.getElementById("quoteDisplay");
+// const quoteDisplay = document.getElementById("quoteDisplay");
 const newQuoteBtn = document.getElementById("newQuote");
+const categoryFilter = document.getElementById("categoryFilter");
 
 /* ---------- DEFAULT QUOTES ---------- */
 const defaultQuotes = [
@@ -9,28 +11,63 @@ const defaultQuotes = [
   { text: "Simplicity is the soul of efficiency.", category: "Technology" }
 ];
 
-/* ---------- LOAD FROM LOCAL STORAGE ---------- */
+/* ---------- LOAD QUOTES ---------- */
 let quotes = JSON.parse(localStorage.getItem("quotes")) || defaultQuotes;
 
-/* ---------- SAVE TO LOCAL STORAGE ---------- */
+/* ---------- SAVE QUOTES ---------- */
 function saveQuotes() {
   localStorage.setItem("quotes", JSON.stringify(quotes));
 }
 
+/* ---------- POPULATE CATEGORIES ---------- */
+function populateCategories() {
+  const categories = [...new Set(quotes.map(q => q.category))];
+
+  categoryFilter.innerHTML = `<option value="all">All Categories</option>`;
+
+  categories.forEach(category => {
+    const option = document.createElement("option");
+    option.value = category;
+    option.textContent = category;
+    categoryFilter.appendChild(option);
+  });
+
+  // Restore last selected filter
+  const savedCategory = localStorage.getItem("selectedCategory");
+  if (savedCategory) {
+    categoryFilter.value = savedCategory;
+  }
+}
+
 /* ---------- DISPLAY RANDOM QUOTE ---------- */
-function displayRandomQuote() {
-  if (quotes.length === 0) {
-    quoteDisplay.textContent = "No quotes available.";
+function displayRandomQuote(filteredQuotes = quotes) {
+  if (filteredQuotes.length === 0) {
+    quoteDisplay.textContent = "No quotes available for this category.";
     return;
   }
 
-  const randomIndex = Math.floor(Math.random() * quotes.length);
-  const quote = quotes[randomIndex];
+  const randomIndex = Math.floor(Math.random() * filteredQuotes.length);
+  const quote = filteredQuotes[randomIndex];
 
   quoteDisplay.textContent = `"${quote.text}" (${quote.category})`;
 
-  // Save last viewed quote to session storage
+  // Save last viewed quote (session storage)
   sessionStorage.setItem("lastQuote", JSON.stringify(quote));
+}
+
+/* ---------- FILTER QUOTES ---------- */
+function filterQuotes() {
+  const selectedCategory = categoryFilter.value;
+  localStorage.setItem("selectedCategory", selectedCategory);
+
+  if (selectedCategory === "all") {
+    displayRandomQuote(quotes);
+  } else {
+    const filteredQuotes = quotes.filter(
+      q => q.category === selectedCategory
+    );
+    displayRandomQuote(filteredQuotes);
+  }
 }
 
 /* ---------- ADD QUOTE ---------- */
@@ -52,16 +89,19 @@ function addQuote() {
   textInput.value = "";
   categoryInput.value = "";
 
-  displayRandomQuote();
+  populateCategories();
+  filterQuotes();
 }
 
-/* ---------- EXPORT QUOTES TO JSON ---------- */
+/* ---------- EXPORT QUOTES ---------- */
 function exportQuotes() {
-  const dataStr = JSON.stringify(quotes, null, 2);
-  const blob = new Blob([dataStr], { type: "application/json" });
-  const url = URL.createObjectURL(blob);
+  const blob = new Blob([JSON.stringify(quotes, null, 2)], {
+    type: "application/json"
+  });
 
+  const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
+
   link.href = url;
   link.download = "quotes.json";
   link.click();
@@ -69,7 +109,7 @@ function exportQuotes() {
   URL.revokeObjectURL(url);
 }
 
-/* ---------- IMPORT QUOTES FROM JSON ---------- */
+/* ---------- IMPORT QUOTES ---------- */
 function importFromJsonFile(event) {
   const fileReader = new FileReader();
 
@@ -78,14 +118,17 @@ function importFromJsonFile(event) {
       const importedQuotes = JSON.parse(event.target.result);
 
       if (!Array.isArray(importedQuotes)) {
-        throw new Error("Invalid JSON format");
+        throw new Error("Invalid format");
       }
 
       quotes.push(...importedQuotes);
       saveQuotes();
+      populateCategories();
+      filterQuotes();
+
       alert("Quotes imported successfully!");
-    } catch (error) {
-      alert("Error importing JSON file.");
+    } catch {
+      alert("Invalid JSON file.");
     }
   };
 
@@ -101,9 +144,11 @@ function loadLastSessionQuote() {
   }
 }
 
-/* ---------- EVENT LISTENER ---------- */
-newQuoteBtn.addEventListener("click", displayRandomQuote);
+/* ---------- EVENTS ---------- */
+newQuoteBtn.addEventListener("click", filterQuotes);
 
-/* ---------- INITIALIZATION ---------- */
+/* ---------- INIT ---------- */
 saveQuotes();
+populateCategories();
 loadLastSessionQuote();
+filterQuotes();
