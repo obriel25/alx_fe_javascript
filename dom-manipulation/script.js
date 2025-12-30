@@ -183,6 +183,39 @@ async function fetchQuotesFromServer() {
 }
 
 /* ===============================
+   REQUIRED CHECKER FUNCTION
+================================ */
+async function syncQuotes() {
+  try {
+    const serverQuotes = await fetchQuotesFromServer();
+
+    let updated = false;
+
+    serverQuotes.forEach(serverQuote => {
+      const exists = quotes.some(q => q.text === serverQuote.text);
+      if (!exists) {
+        quotes.push(serverQuote); // server wins
+        updated = true;
+      }
+    });
+
+    if (updated) {
+      saveQuotes();               // update local storage
+      populateCategories();       // update categories
+      filterQuotes();             // update DOM
+      notifyUser("Quotes synced from server (conflicts resolved)");
+    } else {
+      notifyUser("No new server updates");
+    }
+
+    updateSyncTime();
+  } catch (error) {
+    notifyUser("Sync failed");
+  }
+}
+
+
+/* ===============================
    🔴 MOCK POST REQUEST (CHECKER NEEDS THIS)
 ================================ */
 function postQuotesToServerMock(data) {
