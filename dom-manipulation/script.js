@@ -203,7 +203,7 @@ async function syncQuotes() {
       saveQuotes();               // update local storage
       populateCategories();       // update categories
       filterQuotes();             // update DOM
-      notifyUser("Quotes synced from server (conflicts resolved)");
+      notifyUser("Quotes synced with server!");
     } else {
       notifyUser("No new server updates");
     }
